@@ -1,0 +1,6 @@
+pandas
+numpy
+ipynb
+ipykernel
+openpyxl
+notebook
