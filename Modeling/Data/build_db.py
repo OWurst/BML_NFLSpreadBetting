@@ -9,7 +9,8 @@ def create_australia_historical_games_table():
     # create table if it doesn't exist
     c.execute('''CREATE TABLE IF NOT EXISTS historical_games
                 (
-                id INTEGER PRIMARY KEY, 
+                id INTEGER PRIMARY KEY,
+                game_id TEXT,
                 season INTEGER, 
                 week INTEGER, 
                 home_team TEXT, 
@@ -19,7 +20,7 @@ def create_australia_historical_games_table():
                 home_line_close REAL,
                 home_spread_diff REAL,
                 over_under_close REAL,
-                total_points REAL,
+                total_score REAL,
                 over_under_diff REAL
                 over_under_result TEXT,
                 home_cover_result TEXT
