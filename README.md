@@ -9,4 +9,7 @@ The goal of this project is to analyze historical data to train an ensemble mode
 
 To contribute to this project, reach out to Owen Wurst at OwenWurst82@gmail.com
 
-![Buffalo Machine Learning Logo](misc/logo1.png)
+<p align="center">
+  <br><br>
+  <img src="misc/logo1.png" alt="Buffalo Machine Learning Logo">
+</p>
