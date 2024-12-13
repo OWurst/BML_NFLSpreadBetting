@@ -8,3 +8,5 @@ The goal of this project is to analyze historical data to train an ensemble mode
 * AJ Burruano
 
 To contribute to this project, reach out to Owen Wurst at OwenWurst82@gmail.com
+
+![Buffalo Machine Learning Logo](misc/logo1.png)
