@@ -2,4 +2,5 @@
 *.xlsx
 .ipynb_checkpoints/
 *.sqlite3
+*.zip
 *.csv

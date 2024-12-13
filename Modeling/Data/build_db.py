@@ -6,7 +6,7 @@ def create_historical_games_table(conn):
     c.execute('''
         CREATE TABLE IF NOT EXISTS historical_games (
             id INTEGER PRIMARY KEY,
-            game_id TEXT,
+            game_id TEXT UNIQUE,
             season REAL,
             week TEXT,
             home_team TEXT,
@@ -41,7 +41,7 @@ def build_historical_games_df():
     df['Week'] = df.apply(lambda row: get_week_number(row, season_start_dates), axis=1)
     
     # Create a unique game_id
-    df['game_id'] = df['Date'].dt.strftime('%Y%m%d') + df['Home Team'] + df['Away Team']
+    df['game_id'] = df['Date'].dt.strftime('%Y/%m/%d') + df['Home Team'] + df['Away Team']
 
     # Remove the 'Date' column
     df = df[['game_id', 'Season', 'Week', 'Home Team', 'Away Team', 'Home Score', 'Away Score', 'Home Line Close', 'Score Diff', 'Home Spread Diff', 'Home vs Spread', 'Total Score Close', 'Total Score', 'Total Score Diff', 'Over vs O/U']]
@@ -82,7 +82,7 @@ def populate_historical_games_table(conn):
     data = df.to_records(index=False)
     c = conn.cursor()
     c.executemany('''
-        INSERT INTO historical_games (
+        INSERT OR IGNORE INTO historical_games (
             game_id, season, week, home_team, away_team, home_score, away_score, 
             home_line_close, score_diff, home_spread_diff, home_vs_spread, 
             total_score_close, total_score, total_score_diff, over_vs_ou
