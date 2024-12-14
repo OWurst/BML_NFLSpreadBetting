@@ -48,7 +48,7 @@ def create_team_weekly_stats_table(conn):
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS team_weekly_stats (
-            id INTEGER PRIMARY KEY,
+            game_id INTEGER PRIMARY KEY,
             team_id INTEGER,
             season INTEGER,
             week TEXT,
