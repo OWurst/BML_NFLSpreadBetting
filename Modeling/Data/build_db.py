@@ -6,18 +6,18 @@ def create_historical_games_table(conn):
     c.execute('''
         CREATE TABLE IF NOT EXISTS historical_games (
             id INTEGER PRIMARY KEY,
-            season REAL,
+            season INTEGER,
             week TEXT,
             home_team_id INTEGER,
             away_team_id INTEGER,
-            home_score REAL,
-            away_score REAL,
+            home_score INTEGER,
+            away_score INTEGER,
             home_line_close REAL,
             score_diff REAL,
             home_spread_diff REAL,
             home_vs_spread TEXT,
             total_score_close REAL,
-            total_score REAL,
+            total_score INTEGER,
             total_score_diff REAL,
             over_vs_ou TEXT,
             FOREIGN KEY (home_team_id) REFERENCES teams(team_id),
@@ -43,6 +43,24 @@ def create_teams_table(conn):
     ''')
     c.close()
     conn.commit()
+
+def create_team_weekly_stats_table(conn):
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS team_weekly_stats (
+            id INTEGER PRIMARY KEY,
+            team_id INTEGER,
+            season INTEGER,
+            week TEXT,
+            FOREIGN KEY (team_id) REFERENCES teams(team_id),
+            UNIQUE (season, week, team_id)
+        )
+    ''')
+    c.close()
+    conn.commit()
+
+def populate_team_weekly_stats_table(conn):
+    pass
 
 def team_rebalance(df, old_new_list):
     for old_team, new_team in old_new_list:
@@ -84,24 +102,11 @@ def build_historical_games_df():
     ])
 
     teams_df = get_teams_table(conn)
-    df['home_team_id'] = df['Home Team'].apply(lambda x: get_team_id(teams_df, x)).astype(int)
-    df['away_team_id'] = df['Away Team'].apply(lambda x: get_team_id(teams_df, x)).astype(int)
+    df['home_team_id'] = df['Home Team'].apply(lambda x: get_team_id(teams_df, x))
+    df['away_team_id'] = df['Away Team'].apply(lambda x: get_team_id(teams_df, x))
 
     # Remove the 'Date' column and reorder columns
     df = df[['Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Score Diff', 'Home Spread Diff', 'Home vs Spread', 'Total Score Close', 'Total Score', 'Total Score Diff', 'Over vs O/U']]
-
-    # Ensure correct data types
-    df['Season'] = df['Season'].astype(float)
-    df['Home Score'] = df['Home Score'].astype(float)
-    df['Away Score'] = df['Away Score'].astype(float)
-    df['Home Line Close'] = df['Home Line Close'].astype(float)
-    df['Score Diff'] = df['Score Diff'].astype(float)
-    df['Home Spread Diff'] = df['Home Spread Diff'].astype(float)
-    df['Total Score Close'] = df['Total Score Close'].astype(float)
-    df['Total Score'] = df['Total Score'].astype(float)
-    df['Total Score Diff'] = df['Total Score Diff'].astype(float)
-    df['home_team_id'] = df['home_team_id'].astype(int)
-    df['away_team_id'] = df['away_team_id'].astype(int)
 
     return df
 
@@ -167,5 +172,7 @@ if __name__ == '__main__':
     populate_teams_table(conn)
     create_historical_games_table(conn)
     populate_historical_games_table(conn)
+    create_team_weekly_stats_table(conn)
+    populate_team_weekly_stats_table(conn)
 
     conn.close()
