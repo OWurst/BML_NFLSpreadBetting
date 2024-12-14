@@ -5,7 +5,7 @@ def create_historical_games_table(conn):
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS historical_games (
-            id INTEGER PRIMARY KEY,
+            game_id INTEGER PRIMARY KEY,
             season INTEGER,
             week TEXT,
             home_team_id INTEGER,
@@ -48,10 +48,9 @@ def create_team_weekly_stats_table(conn):
     c = conn.cursor()
     c.execute('''
         CREATE TABLE IF NOT EXISTS team_weekly_stats (
-            game_id INTEGER PRIMARY KEY,
+            week_team_performance_id INTEGER PRIMARY KEY,
             team_id INTEGER,
-            season INTEGER,
-            week TEXT,
+            game_id INTEGER,
             def_st_td INTEGER,
             drives INTEGER,
             first_downs INTEGER,
@@ -79,7 +78,8 @@ def create_team_weekly_stats_table(conn):
             third_down_conversions INTEGER,
             yards INTEGER,
             FOREIGN KEY (team_id) REFERENCES teams(team_id),
-            UNIQUE (season, week, team_id)
+            FOREIGN KEY (game_id) REFERENCES historical_games(id),
+            UNIQUE (game_id, team_id)
         )
     ''')
     c.close()
@@ -87,6 +87,9 @@ def create_team_weekly_stats_table(conn):
 
 def populate_team_weekly_stats_table(conn):
     df = pd.read_csv('nfl_team_stats_2002-2023.csv')
+
+    # remove all seasons before 2006
+    df = df[df['season'] >= 2006]
 
     df['date'] = pd.to_datetime(df['date'])
     season_start_dates = df.groupby('season')['date'].min()
@@ -101,10 +104,11 @@ def populate_team_weekly_stats_table(conn):
     df['possession_home'] = df['possession_home'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
     df['possession_away'] = df['possession_away'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
 
+    games_df = get_games_table(conn)
+
     home_df = pd.DataFrame()
     home_df['home_team_id'] = df['home_team_id']
-    home_df['Season'] = df['Season']
-    home_df['week'] = df['week']
+    home_df['game_id'] = df.apply(lambda row: get_game_id(games_df, row['Season'], row['week'], row['home_team_id'], row['away_team_id']), axis=1)
     home_df['def_st_td_home'] = df['def_st_td_home']
     home_df['drives_home'] = df['drives_home']
     home_df['first_downs_home'] = df['first_downs_home']
@@ -134,8 +138,7 @@ def populate_team_weekly_stats_table(conn):
 
     away_df = pd.DataFrame()
     away_df['away_team_id'] = df['away_team_id']
-    away_df['Season'] = df['Season']
-    away_df['week'] = df['week']
+    away_df['game_id'] = df.apply(lambda row: get_game_id(games_df, row['Season'], row['week'], row['home_team_id'], row['away_team_id']), axis=1)
     away_df['def_st_td_away'] = df['def_st_td_away']
     away_df['drives_away'] = df['drives_away']
     away_df['first_downs_away'] = df['first_downs_away']
@@ -170,8 +173,8 @@ def populate_team_weekly_stats_table(conn):
     c = conn.cursor()
     c.executemany('''
         INSERT OR IGNORE INTO team_weekly_stats (
-            team_id, season, week, def_st_td, drives, first_downs, first_downs_by_passing, first_downs_by_penalty, first_downs_by_rushing, fourth_down_attempts, fourth_down_conversions, fumbles, interceptions, pass_attempts, pass_completions, pass_yards, penalties, penalty_yards, plays, possession_seconds, red_zone_attempts, red_zone_conversions, rush_attempts, rush_yards, sacks, sack_yards, third_down_attempts, third_down_conversions, yards)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?)
+            team_id, game_id, def_st_td, drives, first_downs, first_downs_by_passing, first_downs_by_penalty, first_downs_by_rushing, fourth_down_attempts, fourth_down_conversions, fumbles, interceptions, pass_attempts, pass_completions, pass_yards, penalties, penalty_yards, plays, possession_seconds, red_zone_attempts, red_zone_conversions, rush_attempts, rush_yards, sacks, sack_yards, third_down_attempts, third_down_conversions, yards)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?)
         ''', data)
     
     conn.commit()
@@ -197,10 +200,28 @@ def get_teams_table(conn, name_only=False):
     teams_df = pd.DataFrame(teams, columns=['team_id', 'team_name'])
     return teams_df
 
+def get_games_table(conn):
+    c = conn.cursor()
+
+    c.execute('SELECT game_id, season, week, home_team_id, away_team_id FROM historical_games')
+    games = c.fetchall()
+    c.close()
+    games_df = pd.DataFrame(games, columns=['game_id', 'season', 'week', 'home_team_id', 'away_team_id'])
+    return games_df
+
+def get_game_id(df, season, week, home_team_id, away_team_id):
+    game = df[(df['season'] == season) & (df['week'] == str(week)) & (df['home_team_id'] == home_team_id) & (df['away_team_id'] == away_team_id)]
+    if not game.empty:
+        return game.iloc[0]['game_id']
+    elif week == 'Super Bowl':
+            game = df[(df['season'] == season) & (df['week'] == str(week)) & (df['away_team_id'] == home_team_id) & (df['home_team_id'] == away_team_id)]
+    else: 
+        raise ValueError(f"Game not found for season: {season}, week: {week}, home_team_id: {home_team_id}, away_team_id: {away_team_id}")
+
 def build_historical_games_df():
     df = pd.read_excel('Australia_Historical_Game_Outcomes.xlsx', engine='openpyxl')
     df = df[['Date', 'Home Team', 'Away Team', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
-
+    
     df['Score Diff'] = df['Home Score'] - df['Away Score']
     df['Total Score'] = df['Home Score'] + df['Away Score']
     df['Home Spread Diff'] = df['Home Line Close'] + df['Score Diff']
@@ -272,6 +293,12 @@ def get_team_id(df, team_name):
 
 def populate_historical_games_table(conn):
     df = build_historical_games_df()
+
+    # ignore games in 2024
+    df = df[df['Season'] < 2024]
+
+    # ignore super bowl games
+    df = df[df['Week'] != 'Super Bowl']
 
     data = list(df.itertuples(index=False, name=None))
     c = conn.cursor()
