@@ -19,7 +19,7 @@ Fields:
 * team_conference TEXT
 * team_division TEXT
 
-### historical games
+### historical_games
 
 This table contains data about games, their outcomes, and spreads. Built from source 1
 

@@ -1,6 +1,22 @@
 import sqlite3
 import pandas as pd
 
+def create_teams_table(conn):
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS teams (
+            team_id INTEGER PRIMARY KEY,
+            team_name_full TEXT UNIQUE,
+            team_city TEXT,
+            team_name TEXT UNIQUE,
+            team_abbreviation TEXT UNIQUE,
+            team_conference TEXT,
+            team_division TEXT
+        )
+    ''')
+    c.close()
+    conn.commit()
+
 def create_historical_games_table(conn):
     c = conn.cursor()
     c.execute('''
@@ -23,22 +39,6 @@ def create_historical_games_table(conn):
             FOREIGN KEY (home_team_id) REFERENCES teams(team_id),
             FOREIGN KEY (away_team_id) REFERENCES teams(team_id),
             UNIQUE (season, week, home_team_id, away_team_id)
-        )
-    ''')
-    c.close()
-    conn.commit()
-
-def create_teams_table(conn):
-    c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS teams (
-            team_id INTEGER PRIMARY KEY,
-            team_name_full TEXT UNIQUE,
-            team_city TEXT,
-            team_name TEXT UNIQUE,
-            team_abbreviation TEXT UNIQUE,
-            team_conference TEXT,
-            team_division TEXT
         )
     ''')
     c.close()
@@ -78,12 +78,52 @@ def create_team_weekly_stats_table(conn):
             third_down_conversions INTEGER,
             yards INTEGER,
             FOREIGN KEY (team_id) REFERENCES teams(team_id),
-            FOREIGN KEY (game_id) REFERENCES historical_games(id),
+            FOREIGN KEY (game_id) REFERENCES historical_games(game_id),
             UNIQUE (game_id, team_id)
         )
     ''')
     c.close()
     conn.commit()
+
+def populate_teams_table(conn):
+    teams_df = pd.read_csv('nfl_teams.csv')
+
+    teams_df['team_city'] = teams_df['Name'].apply(lambda x: ' '.join(x.split()[:-1]))
+    teams_df['team_name'] = teams_df['Name'].apply(lambda x: x.split()[-1])
+
+    teams_df = teams_df[['Name', 'team_city', 'team_name', 'Abbreviation', 'Conference', 'Division']]
+    data = list(teams_df.itertuples(index=False, name=None))
+
+    c = conn.cursor()
+    c.executemany('''
+        INSERT OR IGNORE INTO teams (
+            team_name_full, team_city, team_name, team_abbreviation, team_conference, team_division
+        ) VALUES (?, ?, ?, ?, ?, ?)
+    ''', data)
+
+    conn.commit()
+    c.close()
+
+def populate_historical_games_table(conn):
+    df = build_historical_games_df()
+
+    # ignore games in 2024
+    df = df[df['Season'] < 2024]
+
+    # ignore super bowl games
+    df = df[df['Week'] != 'Super Bowl']
+
+    data = list(df.itertuples(index=False, name=None))
+    c = conn.cursor()
+    c.executemany('''
+        INSERT OR IGNORE INTO historical_games (
+            season, week, home_team_id, away_team_id, home_score, away_score, 
+            home_line_close, score_diff, home_spread_diff, home_vs_spread, 
+            total_score_close, total_score, total_score_diff, over_vs_ou
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', data)
+    conn.commit()
+    c.close()
 
 def populate_team_weekly_stats_table(conn):
     df = pd.read_csv('nfl_team_stats_2002-2023.csv')
@@ -180,6 +220,43 @@ def populate_team_weekly_stats_table(conn):
     conn.commit()
     c.close()
 
+def build_historical_games_df():
+    df = pd.read_excel('Australia_Historical_Game_Outcomes.xlsx', engine='openpyxl')
+    df = df[['Date', 'Home Team', 'Away Team', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
+    
+    df['Score Diff'] = df['Home Score'] - df['Away Score']
+    df['Total Score'] = df['Home Score'] + df['Away Score']
+    df['Home Spread Diff'] = df['Home Line Close'] + df['Score Diff']
+    df['Total Score Diff'] = df['Total Score'] - df['Total Score Close']
+    df['Home vs Spread'] = df['Home Spread Diff'].apply(lambda x: 'Win' if x > 0 else ('Push' if x == 0 else 'Lose'))
+    df['Over vs O/U'] = df['Total Score Diff'].apply(lambda x: 'Win' if x > 0 else ('Push' if x == 0 else 'Lose'))
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Season'] = df['Date'].apply(lambda x: x.year if x.month >= 3 else x.year - 1)
+    season_start_dates = df.groupby('Season')['Date'].min()
+    df['Week'] = df.apply(lambda row: get_week_number(row, season_start_dates), axis=1)
+    
+    # Rebalance team names
+    df = team_rebalance(df, [
+        ('Washington Football Team', 'Washington Commanders'),
+        ('Washington Redskins', 'Washington Commanders'),
+        ('St. Louis Rams', 'Los Angeles Rams'),
+        ('Oakland Raiders', 'Las Vegas Raiders'),
+        ('San Diego Chargers', 'Los Angeles Chargers')
+    ])
+
+    teams_df = get_teams_table(conn)
+    df['home_team_id'] = df['Home Team'].apply(lambda x: get_team_id(teams_df, x))
+    df['away_team_id'] = df['Away Team'].apply(lambda x: get_team_id(teams_df, x))
+
+    # Remove the 'Date' column and reorder columns
+    df = df[['Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Score Diff', 'Home Spread Diff', 'Home vs Spread', 'Total Score Close', 'Total Score', 'Total Score Diff', 'Over vs O/U']]
+
+    return df
+
+###############################################################################################
+# Helper functions
+###############################################################################################
+
 def team_rebalance(df, old_new_list):
     for old_team, new_team in old_new_list:
         df['Home Team'] = df['Home Team'].replace(old_team, new_team)
@@ -218,39 +295,6 @@ def get_game_id(df, season, week, home_team_id, away_team_id):
     else: 
         raise ValueError(f"Game not found for season: {season}, week: {week}, home_team_id: {home_team_id}, away_team_id: {away_team_id}")
 
-def build_historical_games_df():
-    df = pd.read_excel('Australia_Historical_Game_Outcomes.xlsx', engine='openpyxl')
-    df = df[['Date', 'Home Team', 'Away Team', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
-    
-    df['Score Diff'] = df['Home Score'] - df['Away Score']
-    df['Total Score'] = df['Home Score'] + df['Away Score']
-    df['Home Spread Diff'] = df['Home Line Close'] + df['Score Diff']
-    df['Total Score Diff'] = df['Total Score'] - df['Total Score Close']
-    df['Home vs Spread'] = df['Home Spread Diff'].apply(lambda x: 'Win' if x > 0 else ('Push' if x == 0 else 'Lose'))
-    df['Over vs O/U'] = df['Total Score Diff'].apply(lambda x: 'Win' if x > 0 else ('Push' if x == 0 else 'Lose'))
-    df['Date'] = pd.to_datetime(df['Date'])
-    df['Season'] = df['Date'].apply(lambda x: x.year if x.month >= 3 else x.year - 1)
-    season_start_dates = df.groupby('Season')['Date'].min()
-    df['Week'] = df.apply(lambda row: get_week_number(row, season_start_dates), axis=1)
-    
-    # Rebalance team names
-    df = team_rebalance(df, [
-        ('Washington Football Team', 'Washington Commanders'),
-        ('Washington Redskins', 'Washington Commanders'),
-        ('St. Louis Rams', 'Los Angeles Rams'),
-        ('Oakland Raiders', 'Las Vegas Raiders'),
-        ('San Diego Chargers', 'Los Angeles Chargers')
-    ])
-
-    teams_df = get_teams_table(conn)
-    df['home_team_id'] = df['Home Team'].apply(lambda x: get_team_id(teams_df, x))
-    df['away_team_id'] = df['Away Team'].apply(lambda x: get_team_id(teams_df, x))
-
-    # Remove the 'Date' column and reorder columns
-    df = df[['Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Score Diff', 'Home Spread Diff', 'Home vs Spread', 'Total Score Close', 'Total Score', 'Total Score Diff', 'Over vs O/U']]
-
-    return df
-
 def get_week_number(row, season_start_dates):
     season_start_date = season_start_dates[row['Season']]
     delta = row['Date'] - season_start_date
@@ -269,48 +313,8 @@ def get_week_number(row, season_start_dates):
         
     return week_number
 
-def populate_teams_table(conn):
-    teams_df = pd.read_csv('nfl_teams.csv')
-
-    teams_df['team_city'] = teams_df['Name'].apply(lambda x: ' '.join(x.split()[:-1]))
-    teams_df['team_name'] = teams_df['Name'].apply(lambda x: x.split()[-1])
-
-    teams_df = teams_df[['Name', 'team_city', 'team_name', 'Abbreviation', 'Conference', 'Division']]
-    data = list(teams_df.itertuples(index=False, name=None))
-
-    c = conn.cursor()
-    c.executemany('''
-        INSERT OR IGNORE INTO teams (
-            team_name_full, team_city, team_name, team_abbreviation, team_conference, team_division
-        ) VALUES (?, ?, ?, ?, ?, ?)
-    ''', data)
-
-    conn.commit()
-    c.close()
-
 def get_team_id(df, team_name):
     return df[df['team_name'] == team_name]['team_id'].values[0]
-
-def populate_historical_games_table(conn):
-    df = build_historical_games_df()
-
-    # ignore games in 2024
-    df = df[df['Season'] < 2024]
-
-    # ignore super bowl games
-    df = df[df['Week'] != 'Super Bowl']
-
-    data = list(df.itertuples(index=False, name=None))
-    c = conn.cursor()
-    c.executemany('''
-        INSERT OR IGNORE INTO historical_games (
-            season, week, home_team_id, away_team_id, home_score, away_score, 
-            home_line_close, score_diff, home_spread_diff, home_vs_spread, 
-            total_score_close, total_score, total_score_diff, over_vs_ou
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', data)
-    conn.commit()
-    c.close()
 
 if __name__ == '__main__':
     conn = sqlite3.connect('db.sqlite3')
