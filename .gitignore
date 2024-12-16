@@ -1,6 +1,8 @@
 */env/
 *.xlsx
 .ipynb_checkpoints/
+*/.ipynb_checkpoints/
 *.sqlite3
 *.zip
 *.csv
+*/__pycache__/

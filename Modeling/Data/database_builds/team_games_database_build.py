@@ -105,7 +105,7 @@ def populate_teams_table(conn):
     c.close()
 
 def populate_historical_games_table(conn):
-    df = build_historical_games_df()
+    df = build_historical_games_df(conn)
 
     # ignore games in 2024
     df = df[df['Season'] < 2024]
@@ -220,7 +220,7 @@ def populate_team_weekly_stats_table(conn):
     conn.commit()
     c.close()
 
-def build_historical_games_df():
+def build_historical_games_df(conn):
     df = pd.read_excel('Australia_Historical_Game_Outcomes.xlsx', engine='openpyxl')
     df = df[['Date', 'Home Team', 'Away Team', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
     
@@ -316,14 +316,3 @@ def get_week_number(row, season_start_dates):
 def get_team_id(df, team_name):
     return df[df['team_name'] == team_name]['team_id'].values[0]
 
-if __name__ == '__main__':
-    conn = sqlite3.connect('db.sqlite3')
-    
-    create_teams_table(conn)
-    populate_teams_table(conn)
-    create_historical_games_table(conn)
-    populate_historical_games_table(conn)
-    create_team_weekly_stats_table(conn)
-    populate_team_weekly_stats_table(conn)
-
-    conn.close()
