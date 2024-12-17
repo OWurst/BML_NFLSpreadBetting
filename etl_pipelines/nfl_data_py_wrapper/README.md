@@ -1,0 +1,1 @@
+classes used to wrap nfl_data_py to make etl more efficient from this data source
