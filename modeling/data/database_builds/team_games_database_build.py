@@ -29,13 +29,7 @@ def create_historical_games_table(conn):
             home_score INTEGER,
             away_score INTEGER,
             home_line_close REAL,
-            score_diff REAL,
-            home_spread_diff REAL,
-            home_vs_spread TEXT,
             total_score_close REAL,
-            total_score INTEGER,
-            total_score_diff REAL,
-            over_vs_ou TEXT,
             FOREIGN KEY (home_team_id) REFERENCES teams(team_id),
             FOREIGN KEY (away_team_id) REFERENCES teams(team_id),
             UNIQUE (season, week, home_team_id, away_team_id)
@@ -118,9 +112,8 @@ def populate_historical_games_table(conn):
     c.executemany('''
         INSERT OR IGNORE INTO historical_games (
             season, week, home_team_id, away_team_id, home_score, away_score, 
-            home_line_close, score_diff, home_spread_diff, home_vs_spread, 
-            total_score_close, total_score, total_score_diff, over_vs_ou
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            home_line_close, total_score_close
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', data)
     conn.commit()
     c.close()
@@ -224,12 +217,6 @@ def build_historical_games_df(conn):
     df = pd.read_excel('Australia_Historical_Game_Outcomes.xlsx', engine='openpyxl')
     df = df[['Date', 'Home Team', 'Away Team', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
     
-    df['Score Diff'] = df['Home Score'] - df['Away Score']
-    df['Total Score'] = df['Home Score'] + df['Away Score']
-    df['Home Spread Diff'] = df['Home Line Close'] + df['Score Diff']
-    df['Total Score Diff'] = df['Total Score'] - df['Total Score Close']
-    df['Home vs Spread'] = df['Home Spread Diff'].apply(lambda x: 'Win' if x > 0 else ('Push' if x == 0 else 'Lose'))
-    df['Over vs O/U'] = df['Total Score Diff'].apply(lambda x: 'Win' if x > 0 else ('Push' if x == 0 else 'Lose'))
     df['Date'] = pd.to_datetime(df['Date'])
     df['Season'] = df['Date'].apply(lambda x: x.year if x.month >= 3 else x.year - 1)
     season_start_dates = df.groupby('Season')['Date'].min()
@@ -249,7 +236,7 @@ def build_historical_games_df(conn):
     df['away_team_id'] = df['Away Team'].apply(lambda x: get_team_id(teams_df, x))
 
     # Remove the 'Date' column and reorder columns
-    df = df[['Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Score Diff', 'Home Spread Diff', 'Home vs Spread', 'Total Score Close', 'Total Score', 'Total Score Diff', 'Over vs O/U']]
+    df = df[['Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
 
     return df
 
