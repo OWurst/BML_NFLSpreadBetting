@@ -38,10 +38,10 @@ def create_historical_games_table(conn):
     c.close()
     conn.commit()
 
-def create_team_weekly_stats_table(conn):
+def create_team_game_stats_table(conn):
     c = conn.cursor()
     c.execute('''
-        CREATE TABLE IF NOT EXISTS team_weekly_stats (
+        CREATE TABLE IF NOT EXISTS team_game_stats (
             week_team_performance_id INTEGER PRIMARY KEY,
             team_id INTEGER,
             game_id INTEGER,
@@ -118,7 +118,7 @@ def populate_historical_games_table(conn):
     conn.commit()
     c.close()
 
-def populate_team_weekly_stats_table(conn):
+def populate_team_game_stats_table(conn):
     df = pd.read_csv('nfl_team_stats_2002-2023.csv')
 
     # remove all seasons before 2006
@@ -205,7 +205,7 @@ def populate_team_weekly_stats_table(conn):
 
     c = conn.cursor()
     c.executemany('''
-        INSERT OR IGNORE INTO team_weekly_stats (
+        INSERT OR IGNORE INTO team_game_stats (
             team_id, game_id, def_st_td, drives, first_downs, first_downs_by_passing, first_downs_by_penalty, first_downs_by_rushing, fourth_down_attempts, fourth_down_conversions, fumbles, interceptions, pass_attempts, pass_completions, pass_yards, penalties, penalty_yards, plays, possession_seconds, red_zone_attempts, red_zone_conversions, rush_attempts, rush_yards, sacks, sack_yards, third_down_attempts, third_down_conversions, yards)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?)
         ''', data)
