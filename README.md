@@ -7,7 +7,7 @@ The goal of this project is to analyze historical data to train an ensemble mode
 * Owen Wurst
 * AJ Burruano
 
-To contribute to this project, reach out to Owen Wurst at OwenWurst82@gmail.com
+To contribute to this project or join our discord reach out to Owen Wurst at OwenWurst82@gmail.com
 
 <p align="center">
   <br><br>
