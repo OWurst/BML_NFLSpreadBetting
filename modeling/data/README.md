@@ -26,40 +26,20 @@ This table contains data about games, their outcomes, and spreads. Built from so
 Fields:
 
 * <ins>game_id</ins> INTEGER
-* team_id INTEGER FK
 * season INTEGER
 * week TEXT
-* def_st_td INTEGER
-* drives INTEGER
-* first_downs INTEGER
-* first_downs_by_passing INTEGER
-* first_downs_by_penalty INTEGER
-* first_downs_by_rushing INTEGER
-* fourth_down_attempts INTEGER
-* fourth_down_conversions INTEGER
-* fumbles INTEGER
-* interceptions INTEGER
-* pass_attempts INTEGER
-* pass_completions INTEGER
-* pass_yards INTEGER
-* penalties INTEGER
-* penalty_yards INTEGER
-* plays INTEGER
-* possession_seconds INTEGER
-* red_zone_attempts INTEGER
-* red_zone_conversions INTEGER
-* rush_attempts INTEGER
-* rush_yards INTEGER
-* sacks INTEGER
-* sack_yards INTEGER
-* third_down_attempts INTEGER
-* third_down_conversions INTEGER
-* yards INTEGER
+* home_team_id INTEGER
+* away_team_id INTEGER
+* home_score INTEGER
+* away_score INTEGER
+* home_line_close REAL
+* total_score_close REAL
 
 notes:
 
-* FOREIGN KEY (team_id) REFERENCES teams(team_id)
-* (season, week, team_id) must be unique
+* FOREIGN KEY home_team_id REFERENCES teams(team_id)
+* FOREIGN KEY away_team_id REFERENCES teams(team_id)
+* (season, week, home_team_id, away_team_id) must be unique
 
 ### team_weekly_stats
 
