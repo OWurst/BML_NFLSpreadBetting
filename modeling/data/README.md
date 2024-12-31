@@ -26,6 +26,7 @@ This table contains data about games, their outcomes, and spreads. Built from so
 Fields:
 
 * <ins>game_id</ins> INTEGER
+* date DATE
 * season INTEGER
 * week TEXT
 * home_team_id INTEGER
