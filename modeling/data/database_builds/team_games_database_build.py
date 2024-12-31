@@ -22,6 +22,7 @@ def create_historical_games_table(conn):
     c.execute('''
         CREATE TABLE IF NOT EXISTS historical_games (
             game_id INTEGER PRIMARY KEY,
+            date DATE,
             season INTEGER,
             week TEXT,
             home_team_id INTEGER,
@@ -111,9 +112,9 @@ def populate_historical_games_table(conn):
     c = conn.cursor()
     c.executemany('''
         INSERT OR IGNORE INTO historical_games (
-            season, week, home_team_id, away_team_id, home_score, away_score, 
+            date, season, week, home_team_id, away_team_id, home_score, away_score, 
             home_line_close, total_score_close
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', data)
     conn.commit()
     c.close()
@@ -235,8 +236,8 @@ def build_historical_games_df(conn):
     df['home_team_id'] = df['Home Team'].apply(lambda x: get_team_id(teams_df, x))
     df['away_team_id'] = df['Away Team'].apply(lambda x: get_team_id(teams_df, x))
 
-    # Remove the 'Date' column and reorder columns
-    df = df[['Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
+    df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
+    df = df[['Date', 'Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
 
     return df
 
