@@ -304,3 +304,18 @@ def get_week_number(row, season_start_dates):
 def get_team_id(df, team_name):
     return df[df['team_name'] == team_name]['team_id'].values[0]
 
+def main():
+    conn = sqlite3.connect('db.sqlite3')
+    
+    create_teams_table(conn)
+    create_historical_games_table(conn)
+    create_team_game_stats_table(conn)
+
+    populate_teams_table(conn)
+    populate_historical_games_table(conn)
+    populate_team_game_stats_table(conn)
+
+    conn.close()
+
+if __name__ == '__main__':
+    main()
