@@ -118,7 +118,7 @@ def create_player_game_stats_offense_returning_table(conn):
             punt_return_yards INTEGER,
             punt_return_tds INTEGER,
             punt_return_long INTEGER,
-            FOREIGN KEY (player_id) REFERENCES players (player_id),
+            FOREIGN KEY (espn_id) REFERENCES players (espn_id),
             FOREIGN KEY (game_id) REFERENCES games (game_id)
         )
     ''')
@@ -127,7 +127,7 @@ def create_player_game_stats_offense_passing_table(conn):
     conn.execute('''
         CREATE TABLE IF NOT EXISTS player_game_stats_offense_passing (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
-            player_id INTEGER,
+            espn_id INTEGER,
             game_id INTEGER,
             pass_attempts INTEGER,
             pass_completions INTEGER,
@@ -138,7 +138,7 @@ def create_player_game_stats_offense_passing_table(conn):
             pass_sacks INTEGER,
             pass_sack_yards INTEGER,
             qb_rating INTEGER,
-            FOREIGN KEY (player_id) REFERENCES players (player_id),
+            FOREIGN KEY (espn_id) REFERENCES players (espn_id),
             FOREIGN KEY (game_id) REFERENCES games (game_id)
         )
     ''')
@@ -147,13 +147,13 @@ def create_player_game_stats_offense_rushing_table(conn):
     conn.execute('''
         CREATE TABLE IF NOT EXISTS player_game_stats_offense_rushing (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
-            player_id INTEGER,
+            espn_id INTEGER,
             game_id INTEGER,
             rush_attempts INTEGER,
             rush_yards INTEGER,
             rush_tds INTEGER,
             rush_long INTEGER,
-            FOREIGN KEY (player_id) REFERENCES players (player_id),
+            FOREIGN KEY (espn_id) REFERENCES players (espn_id),
             FOREIGN KEY (game_id) REFERENCES games (game_id)
         )
     ''')
@@ -162,14 +162,14 @@ def create_player_game_stats_offense_receiving_table(conn):
     conn.execute('''
         CREATE TABLE IF NOT EXISTS player_game_stats_offense_receiving (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
-            player_id INTEGER,
+            espn_id INTEGER,
             game_id INTEGER,
             receptions INTEGER,
             receiving_yards INTEGER,
             receiving_tds INTEGER,
             receiving_long INTEGER,
             targets INTEGER,
-            FOREIGN KEY (player_id) REFERENCES players (player_id),
+            FOREIGN KEY (espn_id) REFERENCES players (espn_id),
             FOREIGN KEY (game_id) REFERENCES games (game_id)
         )
     ''')
@@ -178,7 +178,7 @@ def create_player_game_stats_defense_table(conn):
     conn.execute('''
         CREATE TABLE IF NOT EXISTS player_game_stats_defense (
             player_game_stats_defense_id INTEGER PRIMARY KEY,
-            player_id INTEGER,
+            espn_id INTEGER,
             game_id INTEGER,
             tackles INTEGER,
             assists INTEGER,
@@ -196,7 +196,7 @@ def create_player_game_stats_defense_table(conn):
             tfl INTEGER,
             penalties INTEGER,
             penalty_yards INTEGER,
-            FOREIGN KEY (player_id) REFERENCES players (player_id),
+            FOREIGN KEY (espn_id) REFERENCES players (espn_id),
             FOREIGN KEY (game_id) REFERENCES games (game_id)
         )
     ''')
