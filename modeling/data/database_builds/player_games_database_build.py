@@ -1,6 +1,7 @@
 import sqlite3
 import pandas as pd
 import nfl_data_py as nfl
+from . import team_games_database_build as tgb
 
 years = list(range(2006, 2025))
 
@@ -230,6 +231,18 @@ def populate_players_table(conn):
     conn.commit()
     c.close()
 
+def populate_player_team_membership_table(conn):
+    weekly_rosters = nfl.import_weekly_rosters(years)
+
+def build_player_team_membership_table():
+    weekly_rosters = nfl.import_weekly_rosters(years)
+
+    weekly_rosters = tgb.team_rebalance(weekly_rosters, team_col=True) 
+    teams_table = tgb.get_teams_table()
+
+    weekly_rosters['team_id'] = weekly_rosters['recent_team'].apply(lambda x: get_team_id(teams_table, x))
+
+
 def build_players_table():
     weekly_rosters = nfl.import_weekly_rosters(years)
 
@@ -271,6 +284,7 @@ def main():
     conn = sqlite3.connect('db.sqlite3')
     create_all_tables(conn)
     populate_players_table(conn)
+    populate_player_team_membership_table(conn)
     conn.commit()
     conn.close()
 

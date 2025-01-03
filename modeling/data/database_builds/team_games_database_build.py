@@ -224,13 +224,7 @@ def build_historical_games_df(conn):
     df['Week'] = df.apply(lambda row: get_week_number(row, season_start_dates), axis=1)
     
     # Rebalance team names
-    df = team_rebalance(df, [
-        ('Washington Football Team', 'Washington Commanders'),
-        ('Washington Redskins', 'Washington Commanders'),
-        ('St. Louis Rams', 'Los Angeles Rams'),
-        ('Oakland Raiders', 'Las Vegas Raiders'),
-        ('San Diego Chargers', 'Los Angeles Chargers')
-    ])
+    df = team_rebalance(df)
 
     teams_df = get_teams_table(conn)
     df['home_team_id'] = df['Home Team'].apply(lambda x: get_team_id(teams_df, x))
@@ -245,10 +239,21 @@ def build_historical_games_df(conn):
 # Helper functions
 ###############################################################################################
 
-def team_rebalance(df, old_new_list):
+def team_rebalance(df, team_col=False):
+    old_new_list = [
+        ('Washington Football Team', 'Washington Commanders'),
+        ('Washington Redskins', 'Washington Commanders'),
+        ('St. Louis Rams', 'Los Angeles Rams'),
+        ('Oakland Raiders', 'Las Vegas Raiders'),
+        ('San Diego Chargers', 'Los Angeles Chargers')
+    ]
+
     for old_team, new_team in old_new_list:
-        df['Home Team'] = df['Home Team'].replace(old_team, new_team)
-        df['Away Team'] = df['Away Team'].replace(old_team, new_team)
+        if team_col:
+            df['team'] = df['team'].replace(old_team, new_team)
+        else:
+            df['Home Team'] = df['Home Team'].replace(old_team, new_team)
+            df['Away Team'] = df['Away Team'].replace(old_team, new_team)
     
     return df
 
