@@ -1,5 +1,6 @@
 import sqlite3
 import pandas as pd
+from . import build_helper_classes as helper
 
 def create_teams_table(conn):
     c = conn.cursor()
@@ -131,7 +132,9 @@ def populate_team_game_stats_table(conn):
     df['Date'] = df['date']
     df['week'] = df.apply(lambda row: get_week_number(row, season_start_dates), axis=1)
 
-    teams_df = get_teams_table(conn, name_only=True)
+    teams_helper = helper.team_id_helper(conn)
+    teams_df = teams_helper.get_teams_table('team_name')
+
     df['home_team_id'] = df['home'].apply(lambda x: get_team_id(teams_df, x))
     df['away_team_id'] = df['away'].apply(lambda x: get_team_id(teams_df, x))
 
@@ -226,7 +229,9 @@ def build_historical_games_df(conn):
     # Rebalance team names
     df = team_rebalance(df)
 
-    teams_df = get_teams_table(conn)
+    teams_helper = helper.team_id_helper(conn)
+    teams_df = teams_helper.get_teams_table('team_name_full')
+
     df['home_team_id'] = df['Home Team'].apply(lambda x: get_team_id(teams_df, x))
     df['away_team_id'] = df['Away Team'].apply(lambda x: get_team_id(teams_df, x))
 

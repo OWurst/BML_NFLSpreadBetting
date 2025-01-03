@@ -1,24 +1,20 @@
+import pandas as pd
+
 class date_week_helper:
     def __init__(self, conn):
         self.conn = conn
-
 
 class team_id_helper:
     def __init__(self, conn):
         self.conn = conn
 
-        teams_table = get_teams_table(self.conn)
-    
-    def get_teams_table(self, conn):
-        c = conn.cursor()
+    def get_teams_table(self, field_to_check):
+        c = self.conn.cursor()
 
-        if name_only:
-            c.execute('SELECT team_id, team_name, team_name_full FROM teams')
-        else:
-            c.execute('SELECT team_id, team_name_full FROM teams')
-        
+        query = f'SELECT team_id, {field_to_check} FROM teams'
+        c.execute(query)
         teams = c.fetchall()
         c.close()
-        teams_df = pd.DataFrame(teams, columns=['team_id', 'team_name', 'team_name_full'])
-        return teams_df
+        teams_df = pd.DataFrame(teams, columns=['team_id', 'team_name'])
 
+        return teams_df
