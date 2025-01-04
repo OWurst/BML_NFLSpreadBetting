@@ -133,7 +133,7 @@ def populate_team_game_stats_table(conn):
     df['week'] = df.apply(lambda row: get_week_number(row, season_start_dates), axis=1)
 
     teams_helper = helper.team_id_helper(conn)
-    df = teams_helper.add_home_away_team_id(df, 'team_name', ['home_team_id', 'away_team_id'])
+    df = teams_helper.add_home_away_team_id(df, 'team_name', ['home', 'away'])
 
     df['possession_home'] = df['possession_home'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
     df['possession_away'] = df['possession_away'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
