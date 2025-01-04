@@ -234,6 +234,26 @@ def populate_players_table(conn):
 def populate_player_team_membership_table(conn):
     weekly_rosters = nfl.import_weekly_rosters(years)
 
+    weekly_rosters = update_team_abbv(df)
+
+def update_team_abbv(df):
+    old_new_list = [
+        ('BLT', 'BAL'),
+        ('CLV', 'CLE'),
+        ('SL', 'LAR'),
+        ('HST', 'HOU'),
+        ('ARZ', 'ARI'),
+        ('OAK', 'LV'),
+        ('SD', 'LAC'),
+        ('LA', 'LAR')
+    ]
+
+    for old_team, new_team in old_new_list:
+        df['team'] = df['team'].replace(old_team, new_team)
+    
+    return df
+    
+
 def build_player_team_membership_table():
     weekly_rosters = nfl.import_weekly_rosters(years)
 
