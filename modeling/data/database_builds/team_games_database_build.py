@@ -133,10 +133,7 @@ def populate_team_game_stats_table(conn):
     df['week'] = df.apply(lambda row: get_week_number(row, season_start_dates), axis=1)
 
     teams_helper = helper.team_id_helper(conn)
-    teams_df = teams_helper.get_teams_table('team_name')
-
-    df['home_team_id'] = df['home'].apply(lambda x: get_team_id(teams_df, x))
-    df['away_team_id'] = df['away'].apply(lambda x: get_team_id(teams_df, x))
+    df = teams_helper.add_home_away_team_id(df, 'team_name', ['home_team_id', 'away_team_id'])
 
     df['possession_home'] = df['possession_home'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
     df['possession_away'] = df['possession_away'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
@@ -230,10 +227,7 @@ def build_historical_games_df(conn):
     df = team_rebalance(df)
 
     teams_helper = helper.team_id_helper(conn)
-    teams_df = teams_helper.get_teams_table('team_name_full')
-
-    df['home_team_id'] = df['Home Team'].apply(lambda x: get_team_id(teams_df, x))
-    df['away_team_id'] = df['Away Team'].apply(lambda x: get_team_id(teams_df, x))
+    df = teams_helper.add_home_away_team_id(df, 'team_name_full', ['Home Team', 'Away Team'])
 
     df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
     df = df[['Date', 'Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
@@ -310,9 +304,6 @@ def get_week_number(row, season_start_dates):
             return "Super Bowl"
         
     return week_number
-
-def get_team_id(df, team_name):
-    return df[df['team_name'] == team_name]['team_id'].values[0]
 
 def main():
     conn = sqlite3.connect('db.sqlite3')
