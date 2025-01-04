@@ -24,25 +24,12 @@ def create_players_table(conn):
         )
     ''')
 
-def create_player_team_membership_table(conn):
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_team_membership (
-            player_team_membership_id INTEGER PRIMARY KEY,
-            player_id INTEGER,
-            team_id INTEGER,
-            start_date TEXT,
-            end_date TEXT,
-            player_number,
-            FOREIGN KEY (player_id) REFERENCES players (player_id),
-            FOREIGN KEY (team_id) REFERENCES teams (team_id)
-        )
-    ''')
-
 def create_player_status_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_health (
+        CREATE TABLE IF NOT EXISTS player_status (
             player_health_id INTEGER PRIMARY KEY,
             player_id INTEGER,
+            team_id INTEGER,
             game_id INTEGER,
             status TEXT,
             FOREIGN KEY (player_id) REFERENCES players (player_id),
@@ -50,9 +37,9 @@ def create_player_status_table(conn):
         )
     ''')
 
-def create_player_game_stats_offense_general_table(conn):
+def create_player_game_stats_off_st_general_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_game_stats_offense_general (
+        CREATE TABLE IF NOT EXISTS player_game_stats_off_st_general (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
             player_id INTEGER,
             game_id INTEGER,
@@ -67,9 +54,9 @@ def create_player_game_stats_offense_general_table(conn):
         )
     ''')
 
-def create_player_game_stats_offense_kicking_table(conn):
+def create_player_game_stats_st_kicking_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_game_stats_offense_kicking (
+        CREATE TABLE IF NOT EXISTS player_game_stats_st_kicking (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
             player_id INTEGER,
             game_id INTEGER,
@@ -90,9 +77,9 @@ def create_player_game_stats_offense_kicking_table(conn):
         )
     ''')
 
-def create_player_game_stats_offense_punting_table(conn):
+def create_player_game_stats_st_punting_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_game_stats_offense_punting (
+        CREATE TABLE IF NOT EXISTS player_game_stats_st_punting (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
             player_id INTEGER,
             game_id INTEGER,
@@ -109,9 +96,9 @@ def create_player_game_stats_offense_punting_table(conn):
         )
     ''')
 
-def create_player_game_stats_offense_returning_table(conn):
+def create_player_game_stats_st_returning_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_game_stats_offense_returning (
+        CREATE TABLE IF NOT EXISTS player_game_stats_st_returning (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
             player_id INTEGER,
             game_id INTEGER,
@@ -128,9 +115,9 @@ def create_player_game_stats_offense_returning_table(conn):
         )
     ''')
 
-def create_player_game_stats_offense_passing_table(conn):
+def create_player_game_stats_off_passing_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_game_stats_offense_passing (
+        CREATE TABLE IF NOT EXISTS player_game_stats_off_passing (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
             player_id INTEGER,
             game_id INTEGER,
@@ -148,9 +135,9 @@ def create_player_game_stats_offense_passing_table(conn):
         )
     ''')
 
-def create_player_game_stats_offense_rushing_table(conn):
+def create_player_game_stats_off_rushing_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_game_stats_offense_rushing (
+        CREATE TABLE IF NOT EXISTS player_game_stats_off_rushing (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
             player_id INTEGER,
             game_id INTEGER,
@@ -163,9 +150,9 @@ def create_player_game_stats_offense_rushing_table(conn):
         )
     ''')
 
-def create_player_game_stats_offense_receiving_table(conn):
+def create_player_game_stats_off_receiving_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_game_stats_offense_receiving (
+        CREATE TABLE IF NOT EXISTS player_game_stats_off_receiving (
             player_game_stats_offense_id INTEGER PRIMARY KEY,
             player_id INTEGER,
             game_id INTEGER,
@@ -179,9 +166,9 @@ def create_player_game_stats_offense_receiving_table(conn):
         )
     ''')
 
-def create_player_game_stats_defense_table(conn):
+def create_player_game_stats_def_table(conn):
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS player_game_stats_defense (
+        CREATE TABLE IF NOT EXISTS player_game_stats_def (
             player_game_stats_defense_id INTEGER PRIMARY KEY,
             player_id INTEGER,
             game_id INTEGER,
@@ -234,7 +221,7 @@ def populate_players_table(conn):
 def populate_player_team_membership_table(conn):
     weekly_rosters = nfl.import_weekly_rosters(years)
 
-    weekly_rosters = update_team_abbv(df)
+    weekly_rosters = update_team_abbv(weekly_rosters)
 
 def update_team_abbv(df):
     old_new_list = [
@@ -289,16 +276,15 @@ def build_players_table():
 
 def create_all_tables(conn):
     create_players_table(conn)
-    create_player_team_membership_table(conn)
     create_player_status_table(conn)
-    create_player_game_stats_offense_general_table(conn)
-    create_player_game_stats_offense_kicking_table(conn)
-    create_player_game_stats_offense_punting_table(conn)
-    create_player_game_stats_offense_returning_table(conn)
-    create_player_game_stats_offense_passing_table(conn)
-    create_player_game_stats_offense_rushing_table(conn)
-    create_player_game_stats_offense_receiving_table(conn)
-    create_player_game_stats_defense_table(conn)
+    create_player_game_stats_off_st_general_table(conn)
+    create_player_game_stats_st_kicking_table(conn)
+    create_player_game_stats_st_punting_table(conn)
+    create_player_game_stats_st_returning_table(conn)
+    create_player_game_stats_off_passing_table(conn)
+    create_player_game_stats_off_rushing_table(conn)
+    create_player_game_stats_off_receiving_table(conn)
+    create_player_game_stats_def_table(conn)
 
 def main():
     conn = sqlite3.connect('db.sqlite3')

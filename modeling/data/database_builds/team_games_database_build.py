@@ -18,10 +18,10 @@ def create_teams_table(conn):
     c.close()
     conn.commit()
 
-def create_historical_games_table(conn):
+def create_games_table(conn):
     c = conn.cursor()
     c.execute('''
-        CREATE TABLE IF NOT EXISTS historical_games (
+        CREATE TABLE IF NOT EXISTS games (
             game_id INTEGER PRIMARY KEY,
             date DATE,
             season INTEGER,
@@ -74,7 +74,7 @@ def create_team_game_stats_table(conn):
             third_down_conversions INTEGER,
             yards INTEGER,
             FOREIGN KEY (team_id) REFERENCES teams(team_id),
-            FOREIGN KEY (game_id) REFERENCES historical_games(game_id),
+            FOREIGN KEY (game_id) REFERENCES games(game_id),
             UNIQUE (game_id, team_id)
         )
     ''')
@@ -100,8 +100,8 @@ def populate_teams_table(conn):
     conn.commit()
     c.close()
 
-def populate_historical_games_table(conn):
-    df = build_historical_games_df(conn)
+def populate_games_table(conn):
+    df = build_games_df(conn)
 
     # ignore games in 2024
     df = df[df['Season'] < 2024]
@@ -112,7 +112,7 @@ def populate_historical_games_table(conn):
     data = list(df.itertuples(index=False, name=None))
     c = conn.cursor()
     c.executemany('''
-        INSERT OR IGNORE INTO historical_games (
+        INSERT OR IGNORE INTO games (
             date, season, week, home_team_id, away_team_id, home_score, away_score, 
             home_line_close, total_score_close
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -138,11 +138,13 @@ def populate_team_game_stats_table(conn):
     df['possession_home'] = df['possession_home'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
     df['possession_away'] = df['possession_away'].apply(lambda x: int(x.split(':')[0]) * 60 + int(x.split(':')[1]))
 
-    games_df = get_games_table(conn)
+    games_helper = helper.date_game_helper(conn)
 
     home_df = pd.DataFrame()
     home_df['home_team_id'] = df['home_team_id']
-    home_df['game_id'] = df.apply(lambda row: get_game_id(games_df, row['Season'], row['week'], row['home_team_id'], row['away_team_id']), axis=1)
+
+    home_df = games_helper.add_game_id(home_df, df)
+    
     home_df['def_st_td_home'] = df['def_st_td_home']
     home_df['drives_home'] = df['drives_home']
     home_df['first_downs_home'] = df['first_downs_home']
@@ -172,7 +174,9 @@ def populate_team_game_stats_table(conn):
 
     away_df = pd.DataFrame()
     away_df['away_team_id'] = df['away_team_id']
-    away_df['game_id'] = df.apply(lambda row: get_game_id(games_df, row['Season'], row['week'], row['home_team_id'], row['away_team_id']), axis=1)
+
+    away_df = games_helper.add_game_id(away_df, df)
+
     away_df['def_st_td_away'] = df['def_st_td_away']
     away_df['drives_away'] = df['drives_away']
     away_df['first_downs_away'] = df['first_downs_away']
@@ -214,7 +218,7 @@ def populate_team_game_stats_table(conn):
     conn.commit()
     c.close()
 
-def build_historical_games_df(conn):
+def build_games_df(conn):
     df = pd.read_excel('Australia_Historical_Game_Outcomes.xlsx', engine='openpyxl')
     df = df[['Date', 'Home Team', 'Away Team', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
     
@@ -269,24 +273,6 @@ def get_teams_table(conn, name_only=False):
     teams_df = pd.DataFrame(teams, columns=['team_id', 'team_name'])
     return teams_df
 
-def get_games_table(conn):
-    c = conn.cursor()
-
-    c.execute('SELECT game_id, season, week, home_team_id, away_team_id FROM historical_games')
-    games = c.fetchall()
-    c.close()
-    games_df = pd.DataFrame(games, columns=['game_id', 'season', 'week', 'home_team_id', 'away_team_id'])
-    return games_df
-
-def get_game_id(df, season, week, home_team_id, away_team_id):
-    game = df[(df['season'] == season) & (df['week'] == str(week)) & (df['home_team_id'] == home_team_id) & (df['away_team_id'] == away_team_id)]
-    if not game.empty:
-        return game.iloc[0]['game_id']
-    elif week == 'Super Bowl':
-            game = df[(df['season'] == season) & (df['week'] == str(week)) & (df['away_team_id'] == home_team_id) & (df['home_team_id'] == away_team_id)]
-    else: 
-        raise ValueError(f"Game not found for season: {season}, week: {week}, home_team_id: {home_team_id}, away_team_id: {away_team_id}")
-
 def get_week_number(row, season_start_dates):
     season_start_date = season_start_dates[row['Season']]
     delta = row['Date'] - season_start_date
@@ -309,11 +295,11 @@ def main():
     conn = sqlite3.connect('db.sqlite3')
     
     create_teams_table(conn)
-    create_historical_games_table(conn)
+    create_games_table(conn)
     create_team_game_stats_table(conn)
 
     populate_teams_table(conn)
-    populate_historical_games_table(conn)
+    populate_games_table(conn)
     populate_team_game_stats_table(conn)
 
     conn.close()
