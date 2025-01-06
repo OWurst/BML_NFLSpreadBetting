@@ -2,6 +2,7 @@ import sqlite3
 import pandas as pd
 import nfl_data_py as nfl
 from . import team_games_database_build as tgb
+from . import build_helper_classes as helper
 
 years = list(range(2006, 2025))
 
@@ -218,10 +219,35 @@ def populate_players_table(conn):
     conn.commit()
     c.close()
 
-def populate_player_team_membership_table(conn):
+def populate_player_status_table(conn):
+    player_status_table = build_player_status_table(conn)
+    
+    data = list(player_status_table.itertuples(index=False, name=None))
+
+    c = conn.cursor()
+    c.executemany('''
+        INSERT OR IGNORE INTO player_status (
+            player_id,
+            team_id,
+            game_id,
+            status
+        ) VALUES (?, ?, ?, ?)''', data)
+
+    conn.commit()
+    c.close()
+    
+def build_player_status_table(conn):
     weekly_rosters = nfl.import_weekly_rosters(years)
 
+    game_helper = helper.date_game_helper(conn)
+    team_helper = helper.team_id_helper(conn)
+
     weekly_rosters = update_team_abbv(weekly_rosters)
+    
+    weekly_rosters = team_helper.add_team_id(weekly_rosters, 'team_abbreviation', 'team')
+    weekly_rosters = game_helper.add_game_id_single_team(weekly_rosters, weekly_rosters)
+
+    return weekly_rosters[['player_id', 'team_id', 'game_id', 'status']]
 
 def update_team_abbv(df):
     old_new_list = [
@@ -239,16 +265,6 @@ def update_team_abbv(df):
         df['team'] = df['team'].replace(old_team, new_team)
     
     return df
-    
-
-def build_player_team_membership_table():
-    weekly_rosters = nfl.import_weekly_rosters(years)
-
-    weekly_rosters = tgb.team_rebalance(weekly_rosters, team_col=True) 
-    teams_table = tgb.get_teams_table()
-
-    weekly_rosters['team_id'] = weekly_rosters['recent_team'].apply(lambda x: get_team_id(teams_table, x))
-
 
 def build_players_table():
     weekly_rosters = nfl.import_weekly_rosters(years)
@@ -290,7 +306,7 @@ def main():
     conn = sqlite3.connect('db.sqlite3')
     create_all_tables(conn)
     populate_players_table(conn)
-    populate_player_team_membership_table(conn)
+    populate_player_status_table(conn)
     conn.commit()
     conn.close()
 

@@ -12,11 +12,35 @@ class date_game_helper:
         c.close()
         games_df = pd.DataFrame(games, columns=['game_id', 'date', 'season', 'week', 'home_team_id', 'away_team_id'])
         return games_df
+
+    def switch_weeks_format(self, df):
+        df['week'] = df['week'].apply(lambda row: self.get_week_number(row['season'], row['week']))
+        return df
+
+    def get_week_number(self, season, week):
+        regular_season_weeks = 18 if row['Season'] >= 2021 else 17
+        if week > regular_season_weeks:
+            playoff_week_number = week - regular_season_weeks
+            if playoff_week_number == 1:
+                return "Wild Card"
+            elif playoff_week_number == 2:
+                return "Divisional"
+            elif playoff_week_number == 3:
+                return "Championship"
+            else:
+                return "Super Bowl"
+        return week        
     
     def add_game_id(self, new_df, full_df):
         games_df = self.get_games_table()
 
         new_df['game_id'] = full_df.apply(lambda row: self.get_game_id(games_df, row['Season'], row['week'], row['home_team_id'], row['away_team_id']), axis=1)
+        return new_df
+
+    def add_game_id_single_team(self, new_df, full_df):
+        games_df = self.get_games_table()
+
+        new_df['game_id'] = full_df.apply(lambda row: self.get_game_id_single_team(games_df, row['season'], row['week'], row['team_id']), axis=1)
         return new_df
 
     def get_game_id(self, df, season, week, home_team_id, away_team_id):
@@ -27,6 +51,14 @@ class date_game_helper:
                 game = df[(df['season'] == season) & (df['week'] == str(week)) & (df['away_team_id'] == home_team_id) & (df['home_team_id'] == away_team_id)]
         else: 
             raise ValueError(f"Game not found for season: {season}, week: {week}, home_team_id: {home_team_id}, away_team_id: {away_team_id}")
+
+    def get_game_id_single_team(self, df, season, week, team_id):
+        game = df[(df['season'] == season) & (df['week'] == str(week)) & ((df['home_team_id'] == team_id) | (df['away_team_id'] == team_id))]
+        if not game.empty:
+            return game.iloc[0]['game_id']
+        else:
+            print(f"Game not found for season: {season}, week: {week}, team_id: {team_id}")
+            return None
 
 class team_id_helper:
     def __init__(self, conn):
@@ -51,5 +83,12 @@ class team_id_helper:
 
         df['home_team_id'] = df[add_fieldnames[0]].apply(lambda x: self.get_team_id(teams_df, x))
         df['away_team_id'] = df[add_fieldnames[1]].apply(lambda x: self.get_team_id(teams_df, x))
+
+        return df
+    
+    def add_team_id(self, df, search_fieldname, add_fieldname):
+        teams_df = self.get_teams_table(search_fieldname)
+
+        df['team_id'] = df[add_fieldname].apply(lambda x: self.get_team_id(teams_df, x))
 
         return df
