@@ -30,4 +30,4 @@ jobs:
 
       # Run the Python script located in the "scripts" directory
       - name: Run Python script
-        run: python modeling/build_dbs.py
+        run: python modeling/data/build_dbs.py
