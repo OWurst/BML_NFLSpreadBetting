@@ -1,0 +1,33 @@
+name: Run Python Script
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  run-python:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x' # Specify Python version, e.g., '3.10'
+
+      # Install dependencies (if any requirements.txt exists)
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      # Run the Python script located in the "scripts" directory
+      - name: Run Python script
+        run: python modeling/build_dbs.py

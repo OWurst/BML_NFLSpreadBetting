@@ -8,4 +8,4 @@
 *.csv
 */__pycache__/
 __pycache__/
-*.yaml
+*config.yaml
