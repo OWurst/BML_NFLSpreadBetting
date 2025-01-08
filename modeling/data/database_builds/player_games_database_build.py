@@ -226,7 +226,7 @@ def populate_player_status_table(conn):
 
     c = conn.cursor()
     c.executemany('''
-        INSERT OR IGNORE INTO player_status (
+        INSERT OR UPDATE INTO player_status (
             player_id,
             team_id,
             game_id,
