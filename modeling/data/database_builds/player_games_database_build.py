@@ -4,7 +4,7 @@ import nfl_data_py as nfl
 from . import team_games_database_build as tgb
 from . import build_helper_classes as helper
 
-years = list(range(2006, 2025))
+years = list(range(2000, 2025))
 
 def create_players_table(conn):
     conn.execute('''
@@ -242,29 +242,12 @@ def build_player_status_table(conn):
     game_helper = helper.date_game_helper(conn)
     team_helper = helper.team_id_helper(conn)
 
-    weekly_rosters = update_team_abbv(weekly_rosters)
+    weekly_rosters = team_helper.update_team_abbv(weekly_rosters)
     
     weekly_rosters = team_helper.add_team_id(weekly_rosters, 'team_abbreviation', 'team')
     weekly_rosters = game_helper.add_game_id_single_team(weekly_rosters, weekly_rosters)
 
     return weekly_rosters[['player_id', 'team_id', 'game_id', 'status']]
-
-def update_team_abbv(df):
-    old_new_list = [
-        ('BLT', 'BAL'),
-        ('CLV', 'CLE'),
-        ('SL', 'LAR'),
-        ('HST', 'HOU'),
-        ('ARZ', 'ARI'),
-        ('OAK', 'LV'),
-        ('SD', 'LAC'),
-        ('LA', 'LAR')
-    ]
-
-    for old_team, new_team in old_new_list:
-        df['team'] = df['team'].replace(old_team, new_team)
-    
-    return df
 
 def build_players_table():
     weekly_rosters = nfl.import_weekly_rosters(years)

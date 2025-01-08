@@ -1,6 +1,9 @@
 import sqlite3
 import pandas as pd
+import nfl_data_py as nfl
 from . import build_helper_classes as helper
+
+years = range(2000, 2025)
 
 def create_teams_table(conn):
     c = conn.cursor()
@@ -28,10 +31,12 @@ def create_games_table(conn):
             week TEXT,
             home_team_id INTEGER,
             away_team_id INTEGER,
-            home_score INTEGER,
-            away_score INTEGER,
+            home_score REAL,
+            away_score REAL,
             home_line_close REAL,
             total_score_close REAL,
+            home_ml INTEGER,
+            away_ml INTEGER,
             FOREIGN KEY (home_team_id) REFERENCES teams(team_id),
             FOREIGN KEY (away_team_id) REFERENCES teams(team_id),
             UNIQUE (season, week, home_team_id, away_team_id)
@@ -103,22 +108,32 @@ def populate_teams_table(conn):
 def populate_games_table(conn):
     df = build_games_df(conn)
 
-    # ignore games in 2024
-    df = df[df['Season'] < 2024]
-
-    # ignore super bowl games
-    df = df[df['Week'] != 'Super Bowl']
-
     data = list(df.itertuples(index=False, name=None))
     c = conn.cursor()
     c.executemany('''
         INSERT OR IGNORE INTO games (
-            date, season, week, home_team_id, away_team_id, home_score, away_score, 
-            home_line_close, total_score_close
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            date, season, week, home_team_id, away_team_id, home_score, away_score
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
     ''', data)
     conn.commit()
     c.close()
+
+def build_games_df(conn):
+    df = nfl.import_schedules(years)
+
+    teams_helper = helper.team_id_helper(conn)
+    df = teams_helper.update_team_abbv(df, ['home_team', 'away_team'])
+    df = teams_helper.add_home_away_team_id(df, 'team_abbreviation', ['home_team', 'away_team'])
+
+    df['gameday'] = pd.to_datetime(df['gameday'])
+    df['date'] = df['gameday'].dt.strftime('%Y-%m-%d')
+
+    week_helper = helper.date_game_helper(conn)
+    df = week_helper.switch_weeks_format(df)
+
+    required_columns = ['date', 'season', 'week', 'home_team_id', 'away_team_id', 'home_score', 'away_score']
+    df = df[required_columns]    
+    return df
 
 def populate_team_game_stats_table(conn):
     df = pd.read_csv('nfl_team_stats_2002-2023.csv')
@@ -218,26 +233,6 @@ def populate_team_game_stats_table(conn):
     conn.commit()
     c.close()
 
-def build_games_df(conn):
-    df = pd.read_excel('Australia_Historical_Game_Outcomes.xlsx', engine='openpyxl')
-    df = df[['Date', 'Home Team', 'Away Team', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
-    
-    df['Date'] = pd.to_datetime(df['Date'])
-    df['Season'] = df['Date'].apply(lambda x: x.year if x.month >= 3 else x.year - 1)
-    season_start_dates = df.groupby('Season')['Date'].min()
-    df['Week'] = df.apply(lambda row: get_week_number(row, season_start_dates), axis=1)
-    
-    # Rebalance team names
-    df = team_rebalance(df)
-
-    teams_helper = helper.team_id_helper(conn)
-    df = teams_helper.add_home_away_team_id(df, 'team_name_full', ['Home Team', 'Away Team'])
-
-    df['Date'] = df['Date'].dt.strftime('%Y-%m-%d')
-    df = df[['Date', 'Season', 'Week', 'home_team_id', 'away_team_id', 'Home Score', 'Away Score', 'Home Line Close', 'Total Score Close']]
-
-    return df
-
 ###############################################################################################
 # Helper functions
 ###############################################################################################
@@ -300,7 +295,7 @@ def main():
 
     populate_teams_table(conn)
     populate_games_table(conn)
-    populate_team_game_stats_table(conn)
+    #populate_team_game_stats_table(conn)
 
     conn.close()
 

@@ -14,11 +14,11 @@ class date_game_helper:
         return games_df
 
     def switch_weeks_format(self, df):
-        df['week'] = df['week'].apply(lambda row: self.get_week_number(row['season'], row['week']))
+        df['week'] = df.apply(lambda row: self.get_week_number(row['season'], row['week']), axis=1)
         return df
 
     def get_week_number(self, season, week):
-        regular_season_weeks = 18 if row['Season'] >= 2021 else 17
+        regular_season_weeks = 18 if season >= 2021 else 17
         if week > regular_season_weeks:
             playoff_week_number = week - regular_season_weeks
             if playoff_week_number == 1:
@@ -76,7 +76,11 @@ class team_id_helper:
         return teams_df
 
     def get_team_id(self, df, team_name):
-        return df[df['team_name'] == team_name]['team_id'].values[0]
+        team = df[df['team_name'] == team_name]
+        if not team.empty:
+            return team.iloc[0]['team_id']
+        else:
+            raise ValueError(f"Team name '{team_name}' not found in teams table")
 
     def add_home_away_team_id(self, df, search_fieldname, add_fieldnames):
         teams_df = self.get_teams_table(search_fieldname)
@@ -91,4 +95,23 @@ class team_id_helper:
 
         df['team_id'] = df[add_fieldname].apply(lambda x: self.get_team_id(teams_df, x))
 
+        return df
+    
+    def update_team_abbv(self, df, fields=['team']):
+        old_new_list = [
+            ('BLT', 'BAL'),
+            ('CLV', 'CLE'),
+            ('SL', 'LAR'),
+            ('HST', 'HOU'),
+            ('ARZ', 'ARI'),
+            ('OAK', 'LV'),
+            ('SD', 'LAC'),
+            ('LA', 'LAR'),
+            ('STL', 'LAR')
+        ]
+
+        for old_team, new_team in old_new_list:
+            for field in fields:
+                df[field] = df[field].replace(old_team, new_team)
+        
         return df
