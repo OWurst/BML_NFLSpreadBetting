@@ -65,6 +65,7 @@ def create_team_game_stats_table(conn):
             pass_attempts INTEGER,
             pass_completions INTEGER,
             pass_yards INTEGER,
+            total_pass_yards_oe,
             penalties INTEGER,
             penalty_yards INTEGER,
             plays INTEGER,
@@ -153,7 +154,9 @@ def populate_team_game_stats_table(conn):
 ###############################################################################################
 
 def build_team_game_stats_df(conn):
-    df = nfl.import_team_game_stats(years)
+    df = nfl.
+
+    team_stats = 
 
    
 def team_rebalance(df, team_col=False):
@@ -208,12 +211,12 @@ def get_week_number(row, season_start_dates):
 def main():
     conn = sqlite3.connect('db.sqlite3')
     
-    #create_teams_table(conn)
-    #create_games_table(conn)
-    #create_team_game_stats_table(conn)
+    create_teams_table(conn)
+    create_games_table(conn)
+    create_team_game_stats_table(conn)
 
-    #populate_teams_table(conn)
-    #populate_games_table(conn)
+    populate_teams_table(conn)
+    populate_games_table(conn)
     #populate_team_game_stats_table(conn)
 
     conn.close()
