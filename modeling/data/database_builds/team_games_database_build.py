@@ -45,43 +45,122 @@ def create_games_table(conn):
     c.close()
     conn.commit()
 
-def create_team_game_stats_table(conn):
+def create_pbp_stats_table(conn):
     c = conn.cursor()
     c.execute('''
-        CREATE TABLE IF NOT EXISTS team_game_stats (
-            week_team_performance_id INTEGER PRIMARY KEY,
-            team_id INTEGER,
+        CREATE TABLE IF NOT EXISTS pbp_stats (
+            play_id INTEGER PRIMARY KEY,
             game_id INTEGER,
-            def_st_td INTEGER,
-            drives INTEGER,
-            first_downs INTEGER,
-            first_downs_by_passing INTEGER,
-            first_downs_by_penalty INTEGER,
-            first_downs_by_rushing INTEGER,
-            fourth_down_attempts INTEGER,
-            fourth_down_conversions INTEGER,
-            fumbles INTEGER,
-            interceptions INTEGER,
-            pass_attempts INTEGER,
-            pass_completions INTEGER,
-            pass_yards INTEGER,
-            total_pass_yards_oe,
-            penalties INTEGER,
-            penalty_yards INTEGER,
-            plays INTEGER,
-            possession_seconds INTEGER,
-            red_zone_attempts INTEGER,
-            red_zone_conversions INTEGER,
-            rush_attempts INTEGER,
-            rush_yards INTEGER,
-            sacks INTEGER,
-            sack_yards INTEGER,
-            third_down_attempts INTEGER,
-            third_down_conversions INTEGER,
-            yards INTEGER,
-            FOREIGN KEY (team_id) REFERENCES teams(team_id),
+            season_type TEXT,
+            posteam_id INTEGER,
+            team_side_id INTEGER,
+            distance_from_endzone REAL,
+            quarter_seconds_remaining REAL,
+            half_seconds_remaining REAL,
+            game_seconds_remaining REAL,
+            half TEXT,
+            qtr_ending BOOLEAN,
+            qtr INTEGER,
+            down INTEGER,
+            goal_to_go BOOLEAN,
+            yds_on_drive REAL,
+            play_type TEXT,
+            yards_gained REAL,
+            shotgun BOOLEAN,
+            no_huddle BOOLEAN,
+            qb_dropback BOOLEAN,
+            qb_kneel BOOLEAN,
+            qb_spike BOOLEAN,
+            qb_scramble BOOLEAN,
+            pass_length REAL,
+            pass_location TEXT,
+            air_yards REAL,
+            yards_after_catch REAL,
+            run_location TEXT,
+            run_gap TEXT,
+            field_goal_result TEXT,
+            kick_distance REAL,
+            extra_point_result TEXT,
+            two_point_conv_result TEXT,
+            home_TO_remaining INTEGER,
+            away_TO_remaining INTEGER,
+            timeout_team_id INTEGER,
+            td_team_id INTEGER,
+            home_score REAL,
+            away_score REAL,
+            ep REAL,
+            epa REAL,
+            air_epa REAL,
+            yac_epa REAL,
+            comp_air_epa REAL,
+            comp_yac_epa REAL,
+            wp REAL,
+            wpa REAL,
+            air_wpa REAL,
+            yac_wpa REAL,
+            comp_air_wpa REAL,
+            comp_yac_wpa REAL,
+            punt_blocked BOOLEAN,
+            first_down_rush BOOLEAN,
+            first_down_pass BOOLEAN,
+            first_down_penalty BOOLEAN,
+            third_down_converted BOOLEAN,
+            third_down_failed BOOLEAN,
+            fourth_down_converted BOOLEAN,
+            fourth_down_failed BOOLEAN,
+            incomplete_pass BOOLEAN,
+            touchback BOOLEAN,
+            interception BOOLEAN,
+            punt_inside_twenty BOOLEAN,
+            punt_in_endzone BOOLEAN,
+            punt_out_of_bounds BOOLEAN,
+            punt_downed BOOLEAN,
+            punt_fair_catch BOOLEAN,
+            kickoff_inside_twenty BOOLEAN,
+            kickoff_in_endzone BOOLEAN,
+            kickoff_out_of_bounds BOOLEAN,
+            kickoff_downed BOOLEAN,
+            kickoff_fair_catch BOOLEAN,
+            fumble_forced BOOLEAN,
+            fumble_not_forced BOOLEAN,
+            fumble_oob BOOLEAN,
+            fumble_lost BOOLEAN,
+            tfl BOOLEAN,
+            rush BOOLEAN,
+            pass BOOLEAN,
+            penalty BOOLEAN,
+            fumble BOOLEAN,
+            complete_pass BOOLEAN,
+            sack BOOLEAN,
+            receiving_yards REAL,
+            rushing_yards REAL,
+            return_team_id INTEGER,
+            penalty_yards REAL,
+            return_yards REAL,
+            penalty_type TEXT,
+            completion_probability REAL,
+            cpoe REAL,
+            series INTEGER,
+            series_result TEXT,
+            st_play_type TEXT,
+            drive_play_count INTEGER,
+            drive_time_of_possession REAL,
+            drive_first_downs INTEGER,
+            drive_inside20 BOOLEAN,
+            drive_ended_with_score BOOLEAN,
+            drive_yards_penalized REAL,
+            drive_start_transition TEXT,
+            drive_end_transition TEXT,
+            drive_play_id_start INTEGER,
+            drive_play_id_end INTEGER,
+            dropback_pct_oe REAL,
+
             FOREIGN KEY (game_id) REFERENCES games(game_id),
-            UNIQUE (game_id, team_id)
+            FOREIGN KEY (posteam_id) REFERENCES teams(team_id),
+            FOREIGN KEY (team_side_id) REFERENCES teams(team_id),
+            FOREIGN KEY (timeout_team_id) REFERENCES teams(team_id),
+            FOREIGN KEY (td_team_id) REFERENCES teams(team_id),
+            FOREIGN KEY (return_team_id) REFERENCES teams(team_id)
         )
     ''')
     c.close()
@@ -136,27 +215,15 @@ def build_games_df(conn):
     df = df[required_columns]    
     return df
 
-def populate_team_game_stats_table(conn):
-   df = build_team_game_stats_df(conn)
-
-    c = conn.cursor()
-    c.executemany('''
-        INSERT OR UPDATE INTO team_game_stats (
-            team_id, game_id, def_st_td, drives, first_downs, first_downs_by_passing, first_downs_by_penalty, first_downs_by_rushing, fourth_down_attempts, fourth_down_conversions, fumbles, interceptions, pass_attempts, pass_completions, pass_yards, penalties, penalty_yards, plays, possession_seconds, red_zone_attempts, red_zone_conversions, rush_attempts, rush_yards, sacks, sack_yards, third_down_attempts, third_down_conversions, yards)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?)
-        ''', data)
-    
-    conn.commit()
-    c.close()
+def populate_pbp_stats_table(conn):
+    pass
 
 ###############################################################################################
 # Helper functions
 ###############################################################################################
 
-def build_team_game_stats_df(conn):
-    df = nfl.
-
-    team_stats = 
+def build_pbp_stats_df(conn):
+    pass
 
    
 def team_rebalance(df, team_col=False):
@@ -213,11 +280,11 @@ def main():
     
     create_teams_table(conn)
     create_games_table(conn)
-    create_team_game_stats_table(conn)
+    create_team_pbp_stats_table(conn)
 
     populate_teams_table(conn)
     populate_games_table(conn)
-    #populate_team_game_stats_table(conn)
+    populate_pbp_stats_table(conn)
 
     conn.close()
 
