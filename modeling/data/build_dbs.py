@@ -6,6 +6,6 @@ if __name__ == '__main__':
     conn = sqlite3.connect('db.sqlite3')
     
     tgb.main()
-    #pgb.main()
+    pgb.main()
 
     conn.close()

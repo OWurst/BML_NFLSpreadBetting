@@ -90,10 +90,15 @@ class team_id_helper:
 
         return df
     
-    def add_team_id(self, df, search_fieldname, add_fieldname):
+    def add_team_id(self, df, search_fieldname, add_fieldname, add_fieldnames=None):
         teams_df = self.get_teams_table(search_fieldname)
 
-        df['team_id'] = df[add_fieldname].apply(lambda x: self.get_team_id(teams_df, x))
+        if add_fieldname is not None:
+            add_fieldnames = [add_fieldname]
+
+        for field in add_fieldnames:
+            id_fieldname = field + '_id'
+            df[id_fieldname] = df[add_fieldname].apply(lambda x: self.get_team_id(teams_df, x))
 
         return df
     

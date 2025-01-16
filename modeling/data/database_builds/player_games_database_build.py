@@ -226,12 +226,15 @@ def populate_player_status_table(conn):
 
     c = conn.cursor()
     c.executemany('''
-        INSERT OR UPDATE INTO player_status (
-            player_id,
-            team_id,
-            game_id,
-            status
-        ) VALUES (?, ?, ?, ?)''', data)
+        INSERT INTO games (
+            date, season, week, home_team_id, away_team_id, home_score, away_score
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(date, home_team_id, away_team_id) DO UPDATE SET
+            season=excluded.season,
+            week=excluded.week,
+            home_score=excluded.home_score,
+            away_score=excluded.away_score
+        ''', data)
 
     conn.commit()
     c.close()

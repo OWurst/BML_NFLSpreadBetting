@@ -3,7 +3,7 @@ import pandas as pd
 import nfl_data_py as nfl
 from . import build_helper_classes as helper
 
-years = range(2000, 2025)
+years = range(2000, 2001)
 
 def create_teams_table(conn):
     c = conn.cursor()
@@ -205,9 +205,14 @@ def populate_games_table(conn):
     data = list(df.itertuples(index=False, name=None))
     c = conn.cursor()
     c.executemany('''
-        INSERT OR UPDATE INTO games (
+        INSERT INTO games (
             date, season, week, home_team_id, away_team_id, home_score, away_score
         ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(season, week, home_team_id, away_team_id) DO UPDATE SET
+            season=excluded.season,
+            week=excluded.week,
+            home_score=excluded.home_score,
+            away_score=excluded.away_score
     ''', data)
     conn.commit()
     c.close()
@@ -229,24 +234,157 @@ def build_games_df(conn):
     df = df[required_columns]    
     return df
 
-# def populate_pbp_stats_table(conn):
-#     df = build_pbp_stats_df(conn)
+def populate_pbp_stats_table(conn):
+    df = build_pbp_stats_df(conn)
 
-#     data = list(df.itertuples(index=False, name=None))
-#     c = conn.cursor()
-#     c.executemany('''
-#         INSERT OR UPDATE INTO pbp_stats (
+    data = list(df.itertuples(index=False, name=None))
+    c = conn.cursor()
+    c.executemany('''
+        INSERT OR IGNORE INTO pbp_stats (
+            game_id,
+            season_type,
 
-#         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-#         ''')
+            posteam_id,
+            drive,
+
+            half,
+            qtr_ending,
+            qtr,
+            quarter_seconds_remaining,
+            half_seconds_remaining,
+            game_seconds_remaining,
+
+            yards_gained,
+            down,
+            goal_to_go,
+            series,
+            series_result,
+            distance_from_endzone,
+            yds_on_drive,
+
+            play_type,
+            shotgun,
+            no_huddle,
+            qb_dropback,
+            qb_kneel,
+            qb_spike,
+            qb_scramble,
+            dropback_pct_oe,
+
+            first_down_rush,
+            first_down_pass,
+            first_down_penalty,
+            third_down_converted,
+            third_down_failed,
+            fourth_down_converted,
+            fourth_down_failed,
+
+            rush,
+            run_location,
+            run_gap,
+            rushing_yards,
+
+            pass,            
+            pass_length,
+            pass_location,
+            air_yards,
+            yards_after_catch,
+            incomplete_pass,
+            interception,
+            complete_pass,
+            receiving_yards,
+            completion_probability,
+            cpoe,
+            air_wpa,
+            yac_wpa,
+            comp_air_wpa,
+            comp_yac_wpa,
+            air_epa,
+            yac_epa,
+            comp_air_epa,
+            comp_yac_epa,
+            
+            st_play_type,
+            field_goal_result,
+            kick_distance,
+            extra_point_result,
+            two_point_conv_result,
+            punt_blocked,
+            touchback,
+            punt_inside_twenty,
+            punt_in_endzone,
+            punt_out_of_bounds,
+            punt_downed,
+            punt_fair_catch,
+            kickoff_inside_twenty,
+            kickoff_in_endzone,
+            kickoff_out_of_bounds,
+            kickoff_downed,
+            kickoff_fair_catch,
+
+            home_TO_remaining,
+            away_TO_remaining,
+            timeout_team_id,
+            
+            td_team_id,
+            home_score,
+            away_score,
+            
+            ep,
+            epa,
+            wp,
+            wpa,
+            
+            fumble,
+            fumble_forced,
+            fumble_not_forced,
+            fumble_oob,
+            fumble_lost,
+            tfl,
+            sack,
+
+            penalty,
+            penalty_type,
+            penalty_yards,
+
+            return_team_id,            
+            return_yards,
+
+            drive_play_count,
+            drive_time_of_possession,
+            drive_first_downs,
+            drive_inside20,
+            drive_ended_with_score,
+            drive_yards_penalized,
+            drive_start_transition,
+            drive_end_transition,
+            drive_play_id_start,
+            drive_play_id_end,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''')
 
 ###############################################################################################
 # Helper functions
 ###############################################################################################
 
 def build_pbp_stats_df(conn):
-    pass
-   
+    df = nfl.import_pbp_data(years, downcast=True)
+    
+    game_helper = helper.date_game_helper(conn)
+    team_helper = helper.team_id_helper(conn)
+
+    id_fields = ['home_team', 'away_team', 'posteam', 'timeout_team', 'td_team', 'return_team']
+
+    df = team_helper.update_team_abbv(df, id_fields)
+
+    df = team_helper.add_team_id(df, 'team_abbreviation', None, add_fieldnames=id_fields)
+
+    df = df['home_team_id', 'away_team_id', 'posteam_id', 'timeout_team_id', 'td_team_id', 'return_team_id']
+
+    print(df.head(2))
+
+    #df = game_helper.add_game_id_single_team(df, df)
+
 def team_rebalance(df, team_col=False):
     old_new_list = [
         ('Washington Football Team', 'Washington Commanders'),
@@ -299,12 +437,12 @@ def get_week_number(row, season_start_dates):
 def main():
     conn = sqlite3.connect('db.sqlite3')
     
-    # create_teams_table(conn)
-    # create_games_table(conn)
+    create_teams_table(conn)
+    create_games_table(conn)
     create_pbp_stats_table(conn)
 
-    # populate_teams_table(conn)
-    # populate_games_table(conn)
+    populate_teams_table(conn)
+    populate_games_table(conn)
     #populate_pbp_stats_table(conn)
 
     conn.close()
