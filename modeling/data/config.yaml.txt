@@ -1,5 +1,5 @@
 database:
-  type: mysql (or sqlite or whatever you want as long as you build the integration)
+  type: mysql (or sqlite or whatever you want as long as you build the integration may or may not need to build new sql files)
   host:
   port:
   user:

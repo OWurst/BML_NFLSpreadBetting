@@ -42,3 +42,5 @@ except pymysql.MySQLError as e:
 finally:
     connection.close()
     print("MySQL connection closed.")
+
+print("Done.")
