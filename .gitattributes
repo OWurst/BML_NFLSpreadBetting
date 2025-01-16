@@ -1,3 +1,13 @@
 *.sql linguist-detectable=true
 *.sql linguist-language=sql
 *.sql text
+
+# Treat .yaml.txt files as YAML
+*.yaml.txt linguist-detectable=true
+*.yaml.txt linguist-language=YAML
+*.yaml.txt text
+
+# Ensure .yaml files are treated as YAML
+*.yaml linguist-detectable=true
+*.yaml linguist-language=YAML
+*.yaml text

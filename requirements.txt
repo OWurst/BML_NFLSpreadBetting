@@ -5,3 +5,4 @@ ipykernel
 openpyxl
 notebook
 nfl_data_py
+pymysql
