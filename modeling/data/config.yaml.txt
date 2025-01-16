@@ -1,0 +1,6 @@
+database:
+  type: mysql (or sqlite or whatever you want as long as you build the integration)
+  host:
+  port:
+  user:
+  password:
