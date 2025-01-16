@@ -438,11 +438,11 @@ def main():
     conn = sqlite3.connect('db.sqlite3')
     
     create_teams_table(conn)
-    create_games_table(conn)
-    create_pbp_stats_table(conn)
+    # create_games_table(conn)
+    # create_pbp_stats_table(conn)
 
-    populate_teams_table(conn)
-    populate_games_table(conn)
+    # populate_teams_table(conn)
+    # populate_games_table(conn)
     #populate_pbp_stats_table(conn)
 
     conn.close()
