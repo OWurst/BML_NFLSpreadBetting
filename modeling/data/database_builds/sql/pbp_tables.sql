@@ -126,3 +126,4 @@ CREATE TABLE IF NOT EXISTS pbp_stats (
     FOREIGN KEY (td_team_id) REFERENCES teams(team_id),
     FOREIGN KEY (return_team_id) REFERENCES teams(team_id)
 );
+
